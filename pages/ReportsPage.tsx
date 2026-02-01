@@ -1,13 +1,114 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { securityApi } from '../services/api';
-import { ReportType, AnalyzeResponse, Model } from '../types';
+import { ReportType, AnalyzeResponse, Model, LlmEnrichedEndpoint } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+
+// ### NEW: Modal Component ###
+const EndpointDetailModal: React.FC<{
+  endpoint: LlmEnrichedEndpoint;
+  onClose: () => void;
+}> = ({ endpoint, onClose }) => {
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      <div className="glass p-8 rounded-3xl border border-white/20 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+        <button
+        title='close'
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+        >
+          <FontAwesomeIcon icon={faTimes} size="lg" />
+        </button>
+        
+        <h3 className="text-2xl font-bold mono text-red-400 mb-2">{endpoint.path}</h3>
+        <div className="flex items-center space-x-2 mb-6">
+          {endpoint.methods.map(method => (
+            <span key={method} className="px-2 py-0.5 bg-gray-700 text-white text-[10px] font-bold rounded mono">{method}</span>
+          ))}
+        </div>
+
+        <div className="space-y-6">
+          {/* Request Section */}
+          <div>
+            <h4 className="text-lg font-bold mono uppercase tracking-widest text-gray-400 mb-3">Request Details</h4>
+            <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-500/30 space-y-2">
+              <p className="text-sm text-gray-300">
+                <span className="font-bold">Content Type:</span> {endpoint.request.content_type}
+              </p>
+              <p className="text-sm text-gray-300">
+                <span className="font-bold">Fields:</span> {endpoint.request.fields.length > 0 ? endpoint.request.fields.map(f => f.name).join(', ') : 'None'}
+              </p>
+            </div>
+          </div>
+
+          {/* Response Section */}
+          <div>
+            <h4 className="text-lg font-bold mono uppercase tracking-widest text-gray-400 mb-3">Response Details</h4>
+            <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-500/30 space-y-2">
+              <p className="text-sm text-gray-300">
+                <span className="font-bold">Content Type:</span> {endpoint.response.content_type}
+              </p>
+              <p className="text-sm text-gray-300">
+                <span className="font-bold">Status Codes:</span> {endpoint.response.status_codes.join(', ')}
+              </p>
+              <p className="text-sm text-gray-300">
+                <span className="font-bold">Contains Sensitive Data:</span>{' '}
+                {endpoint.response.contains_sensitive_data ? (
+                  <span className="text-red-400">Yes</span>
+                ) : (
+                  <span className="text-green-400">No</span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Security Risks Section */}
+          <div>
+            <h4 className="text-lg font-bold mono uppercase tracking-widest text-gray-400 mb-3">Security Risks</h4>
+            {endpoint.security_risks?.length > 0 ? (
+              <div className="space-y-3">
+                {endpoint.security_risks.map((risk, index) => (
+                  <div key={index} className="bg-red-900/50 p-4 rounded-lg border border-red-500/30">
+                    <p className="font-bold mono text-red-300">{risk.id} <span className={`ml-2 text-xs uppercase px-2 py-0.5 rounded ${risk.severity === 'high' ? 'bg-red-500' : risk.severity === 'medium' ? 'bg-yellow-500' : 'bg-gray-500'} text-black`}>{risk.severity}</span></p>
+                    <p className="text-sm text-gray-300 mt-1">{risk.description}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 italic text-sm">No typical security risks identified.</p>
+            )}
+          </div>
+
+          {/* Compliance Analysis Section */}
+          <div>
+            <h4 className="text-lg font-bold mono uppercase tracking-widest text-gray-400 mb-3">Compliance Analysis</h4>
+            {endpoint.compliance_analysis && Object.keys(endpoint.compliance_analysis).length > 0 ? (
+               <div className="space-y-3">
+                {Object.entries(endpoint.compliance_analysis).map(([key, value]) => (
+                  <div key={key} className="bg-blue-900/50 p-4 rounded-lg border border-blue-500/30">
+                     <p className="font-bold mono text-blue-300">{key} <span className={`ml-2 text-xs uppercase px-2 py-0.5 rounded ${value.applicable ? 'bg-blue-400' : 'bg-gray-600'} text-black`}>{value.applicable ? 'Applicable' : 'Not Applicable'}</span></p>
+                     {value.applicable && <p className="text-sm text-gray-300 mt-1">{value.reason}</p>}
+                  </div>
+                ))}
+               </div>
+            ) : (
+              <p className="text-gray-500 italic text-sm">No compliance analysis provided.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+// ###########################
+
 
 const ReportsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { githubUrl, sectorHint, plan, scanId, setScanId } = useApp();
+  const { githubUrl, sectorHint, backendFramework, plan, scanId, setScanId } = useApp();
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [analysisResult, setAnalysisResult] = useState<AnalyzeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -15,42 +116,57 @@ const ReportsPage: React.FC = () => {
   const [message, setMessage] = useState('');
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>('models/gemini-1.5-pro-latest');
+  const [selectedEndpoint, setSelectedEndpoint] = useState<LlmEnrichedEndpoint | null>(null);
+
+  const effectRan = useRef(false);
 
   useEffect(() => {
-    const triggerAnalysis = async () => {
-      if (!githubUrl) {
-        setError('No repository information found. Please go back to the upload page.');
-        setIsAnalyzing(false);
-        return;
-      }
+    if (effectRan.current === false) {
+      const triggerAnalysis = async () => {
+        if (!githubUrl) {
+          setError('No repository information found. Please go back to the upload page.');
+          setIsAnalyzing(false);
+          return;
+        }
 
-      try {
-        const res = await securityApi.analyzeRepo({github_url: githubUrl, plan: plan, sector_hint:sectorHint, backend_framework: '' });
-        setAnalysisResult(res);
-        setScanId(res.scan_id);
-      } catch (err: any) {
-        console.error('Analysis error', err);
-        setError('System breach: Repository analysis failed. Please verify the URL.');
-      } finally {
-        setIsAnalyzing(false);
-      }
-    };
+        try {
+          const res = await securityApi.analyzeRepo({github_url: githubUrl, plan: plan, sector_hint:sectorHint, backend_framework: backendFramework});
+          setAnalysisResult(res);
+          setScanId(res.scan_id);
+        } catch (err: any) {
+          console.error('Analysis error', err);
+          setError('System breach: Repository analysis failed. Please verify the URL.');
+        } finally {
+          setIsAnalyzing(false);
+        }
+      };
 
-    triggerAnalysis();
+      triggerAnalysis();
+
+      return () => {
+        effectRan.current = true;
+      };
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const modelsEffectRan = useRef(false);
+
   useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        const availableModels = await securityApi.listModels();
-        setModels(availableModels);
-      } catch (err) {
-        console.error("Failed to fetch models", err);
-        // Do not set a page-level error, as report generation can still proceed with a default model
-      }
+    if (modelsEffectRan.current === false) {
+      const fetchModels = async () => {
+        try {
+          const availableModels = await securityApi.listModels();
+          setModels(availableModels);
+        } catch (err) {
+          console.error("Failed to fetch models", err);
+        }
+      };
+      fetchModels();
+    }
+    return () => {
+      modelsEffectRan.current = true;
     };
-    fetchModels();
   }, []);
 
   const handleGenerate = async (type: ReportType) => {
@@ -61,9 +177,8 @@ const ReportsPage: React.FC = () => {
     try {
       const response = await securityApi.generateReport(scanId, type, selectedModel);
       
-      // Extract filename from Content-Disposition header
       const contentDisposition = response.headers['content-disposition'];
-      let filename = `${type}_report.docx`; // A fallback filename
+      let filename = `${type}_report.docx`;
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="(.+)"/);
         if (filenameMatch.length > 1) {
@@ -71,7 +186,6 @@ const ReportsPage: React.FC = () => {
         }
       }
 
-      // Create a blob URL and trigger download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -79,7 +193,6 @@ const ReportsPage: React.FC = () => {
       document.body.appendChild(link);
       link.click();
 
-      // Clean up
       if (link.parentNode) {
         link.parentNode.removeChild(link);
       }
@@ -131,22 +244,49 @@ const ReportsPage: React.FC = () => {
     );
   }
 
+  const endpoints = analysisResult?.framework_analysis?.llm_enriched?.endpoints || [];
+
   return (
     <div className="py-8 space-y-12">
+      {selectedEndpoint && (
+        <EndpointDetailModal endpoint={selectedEndpoint} onClose={() => setSelectedEndpoint(null)} />
+      )}
       <div className="glass p-8 rounded-3xl border border-red-500/30 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="space-y-2">
           <div className="flex items-center space-x-3">
             <span className="px-2 py-0.5 bg-green-500 text-black text-[10px] font-bold rounded uppercase mono">Complete</span>
             <span className="text-gray-500 text-xs mono">SCAN_ID: {scanId}</span>
           </div>
-          <h2 className="text-3xl font-bold">Analysis Terminated.</h2>
+          <h2 className="text-3xl font-bold">Analysis Completed.</h2>
           <p className="text-gray-400">Total of <span className="text-red-500 font-bold">{analysisResult?.total_findings}</span> findings identified in codebase.</p>
         </div>
-        <div className="px-6 py-4 bg-white/5 rounded-2xl border border-white/10 text-center">
-            <div className="text-xs text-gray-500 uppercase mono">Safety Score</div>
-            <div className="text-4xl font-bold text-green-500">82<span className="text-sm text-gray-500">/100</span></div>
-        </div>
       </div>
+
+      {/* ### NEW: API Endpoints Section ### */}
+      {endpoints.length > 0 && (
+        <div className="space-y-6">
+          <h3 className="text-xl font-bold mono uppercase tracking-widest text-gray-400">API Endpoint Analysis</h3>
+          <div className="glass p-6 rounded-2xl border border-white/10 h-72 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {endpoints.map((endpoint, index) => (
+                <div
+                  key={index}
+                  onClick={() => setSelectedEndpoint(endpoint)}
+                  className="bg-white/5 p-4 rounded-lg cursor-pointer hover:bg-white/10 transition-colors"
+                >
+                  <p className="font-mono text-sm text-red-400 truncate">{endpoint.path}</p>
+                  <div className="flex items-center space-x-1 mt-2">
+                    {endpoint.methods.map(method => (
+                      <span key={method} className="px-1.5 py-0.5 bg-gray-700 text-white text-[9px] font-bold rounded mono">{method}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ################################ */}
 
       {/* Model Selection UI */}
       <div className="space-y-6">
@@ -224,5 +364,7 @@ const ReportsPage: React.FC = () => {
     </div>
   );
 };
+
+export default ReportsPage;
 
 export default ReportsPage;
