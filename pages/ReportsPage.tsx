@@ -367,4 +367,3 @@ const ReportsPage: React.FC = () => {
 
 export default ReportsPage;
 
-export default ReportsPage;
