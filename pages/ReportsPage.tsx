@@ -25,7 +25,7 @@ const ReportsPage: React.FC = () => {
       }
 
       try {
-        const res = await securityApi.analyzeRepo({github_url: githubUrl, plan: plan, sector_hint:sectorHint });
+        const res = await securityApi.analyzeRepo({github_url: githubUrl, plan: plan, sector_hint:sectorHint, backend_framework: '' });
         setAnalysisResult(res);
         setScanId(res.scan_id);
       } catch (err: any) {

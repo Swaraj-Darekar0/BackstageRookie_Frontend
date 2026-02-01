@@ -11,6 +11,7 @@ const UploadPage: React.FC = () => {
   
   const [url, setUrl] = useState('');
   const [sector, setSector] = useState('');
+  const [framework, setFramework] = useState('django'); // Restored state
   const [error, setError] = useState('');
   const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);
 
@@ -28,7 +29,7 @@ const UploadPage: React.FC = () => {
       return;
     }
 
-    setRepoInfo(url, sector);
+    setRepoInfo(url, sector, framework); // Pass framework
     navigate('/plan');
   };
 
@@ -67,6 +68,21 @@ const UploadPage: React.FC = () => {
               <option value="healthcare">Healthcare (HIPAA Focus)</option>
               <option value="government">Government (FedRAMP Focus)</option>
               <option value="crypto">Web3 / Crypto (Audit Focus)</option>
+            </select>
+          </div>
+
+          {/* Restored Backend Framework Select */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mono">Backend Framework</label>
+            <select
+                title='Backend Framework'
+                value={framework}
+                onChange={(e) => setFramework(e.target.value)}
+                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-red-500 transition-all appearance-none"
+            >
+              <option value="django">Django</option>
+              <option value="fastapi">FastAPI</option>
+              <option value="flask">Flask</option>
             </select>
           </div>
 

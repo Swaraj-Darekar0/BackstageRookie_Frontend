@@ -6,11 +6,12 @@ import { securityApi } from '../services/api';
 interface AppContextType extends AppState {
   login: () => Promise<void>;
   logout: () => void;
-  setRepoInfo: (url: string, sector: string) => void;
+  setRepoInfo: (url: string, sector: string, framework: string) => void;
   setPlan: (plan: PlanType) => void;
   setScanId: (id: string) => void;
   isLoading: boolean;
   handleLoginCallback: () => Promise<void>;
+  backendFramework: string;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -20,6 +21,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [user, setUser] = useState<User | null>(null);
   const [githubUrl, setGithubUrl] = useState('');
   const [sectorHint, setSectorHint] = useState('');
+  const [backendFramework, setBackendFramework] = useState('');
   const [plan, setPlanState] = useState<PlanType>('basic');
   const [scanId, setScanIdState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,9 +103,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsLoggedIn(false);
   };
 
-  const setRepoInfo = (url: string, sector: string) => {
+  const setRepoInfo = (url: string, sector: string, framework: string) => {
     setGithubUrl(url);
     setSectorHint(sector);
+    setBackendFramework(framework);
   };
 
   const setPlan = async (newPlan: PlanType) => {
@@ -124,6 +127,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         user,
         githubUrl,
         sectorHint,
+        backendFramework,
         plan,
         scanId,
         login,

@@ -75,6 +75,7 @@ export const securityApi = {
     github_url: string;
     sector_hint: string;
     plan: string;
+    backend_framework: string;
   }) => {
     const res = await api.post("/api/analyze", payload, {
       headers: {
