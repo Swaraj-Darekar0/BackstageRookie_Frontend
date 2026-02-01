@@ -1,0 +1,7 @@
+{
+  "name": "Backstage Rookie ",
+  "description": "A high-performance Security Documentation & Compliance Platform for modern engineering teams, featuring AI-powered analysis and automated reporting.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
