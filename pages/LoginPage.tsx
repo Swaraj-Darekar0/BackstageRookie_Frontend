@@ -20,7 +20,7 @@ const LoginPage: React.FC = () => {
   }, [isLoggedIn, navigate]);
 
   const handleLogin = () => {
-    window.location.href = "http://localhost:5000/api/auth/google/login";
+    window.location.href = "https://backstagerookie-backend2.onrender.com/api/auth/google/login";
   };
 
   return (
