@@ -63,11 +63,16 @@ const UploadPage: React.FC = () => {
               onChange={(e) => setSector(e.target.value)}
               className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-red-500 transition-all appearance-none"
             >
-              <option value="">General Purpose</option>
-              <option value="fintech">Fintech (PCI-DSS Focus)</option>
-              <option value="healthcare">Healthcare (HIPAA Focus)</option>
-              <option value="government">Government (FedRAMP Focus)</option>
-              <option value="crypto">Web3 / Crypto (Audit Focus)</option>
+              <option value="">Select a Sector (Optional)</option>
+              <option value="Healthcare">Healthcare - HIPAA, HITECH</option>
+              <option value="Finance & Banking">Finance & Banking - GLBA, SOX, PCI DSS</option>
+              <option value="Technology & SaaS">Technology & SaaS - SOC 2, ISO/IEC 27001, CSA STAR</option>
+              <option value="Retail & E-commerce">Retail & E-commerce - PCI DSS, CCPA, GDPR</option>
+              <option value="Education">Education - FERPA, COPPA</option>
+              <option value="Government & Defense">Government & Defense - FISMA, FedRAMP, ITAR</option>
+              <option value="Energy & Utilities">Energy & Utilities - NERC CIP</option>
+              <option value="Telecommunications">Telecommunications - CALEA, FCC Regulations</option>
+              <option value="General Data Privacy">General Data Privacy - GDPR, CCPA/CPRA, LGPD, PIPEDA</option>
             </select>
           </div>
 
