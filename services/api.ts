@@ -51,6 +51,14 @@ export const securityApi = {
     return res.data;
   },
 
+  login: () => {
+    window.location.href = `${api.defaults.baseURL}api/auth/google/login`;
+  },
+
+  logout: async () => {
+    return api.post('/api/auth/logout');
+  },
+
   changePlan: async (plan: string) => {
     const res = await api.post('/api/change-plan', { plan });
     return res.data;
