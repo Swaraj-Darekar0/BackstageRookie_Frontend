@@ -12,31 +12,16 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  console.log(
-    `[API Request] ${config.method?.toUpperCase()} ${config.url}`,
-    `\n  Authorization: ${typeof config.headers.Authorization === 'string' ? 'Bearer ...' + config.headers.Authorization.slice(-10) : '(none)'}`
-  );
   return config;
 });
 
 // Handle auth failure
 api.interceptors.response.use(
   res => {
-    console.log(`[API Response] ${res.status} ${res.config.url}`, res.data);
     return res;
   },
   err => {
-    if (err.response) {
-      console.error(
-        `[API Error] ${err.response.status} ${err.response.config.url}`,
-        `\n  Response:`, err.response.data
-      );
-    } else {
-      console.error('[API Error] Network or other error', err);
-    }
-
     if (err.response?.status === 401) {
-      console.log('[Auth] Received 401, clearing local storage and redirecting to login.');
       localStorage.clear();
       window.location.href = '/login';
     }
@@ -90,7 +75,6 @@ export const securityApi = {
         "Content-Type": "application/json",
       },
     });
-    console.log(payload)
     return res.data;
   },
 

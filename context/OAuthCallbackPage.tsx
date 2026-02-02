@@ -10,10 +10,10 @@ const OAuthCallbackPage = () => {
     const finishLogin = async () => {
       try {
         await handleLoginCallback();
-        console.log("✅ OAuth login successful, navigating to dashboard...");
+        
         navigate("/dashboard");
       } catch (err) {
-        console.error("❌ OAuth failed:", err);
+        
         navigate("/login");
       }
     };

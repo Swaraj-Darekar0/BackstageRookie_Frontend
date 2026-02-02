@@ -28,31 +28,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     const initialize = async () => {
-      console.log('[Initialize] Checking for existing session...');
       const token = localStorage.getItem('access_token');
       if (token) {
-        console.log('[Initialize] Token found. Syncing state with backend...');
         try {
           // Fetch plan and user profile in parallel
           const [planRes, userProfile] = await Promise.all([
             securityApi.getPlan(),
             securityApi.getUserProfile()
           ]);
-          
-          console.log('[Initialize] getPlan response:', planRes);
           setPlanState(planRes.plan);
 
-          console.log('[Initialize] getUserProfile response:', userProfile);
           setUser(userProfile);
           localStorage.setItem('user_profile', JSON.stringify(userProfile));
-          console.log('[Initialize] State synced successfully.');
 
         } catch (error) {
-          console.error('[Initialize] Failed to sync state with backend.', error);
           // Token might be invalid, Axios interceptor will handle 401
         }
       } else {
-        console.log('[Initialize] No token found.');
       }
       setIsLoading(false);
     };
@@ -70,7 +62,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('user_profile', JSON.stringify(userProfile));
     
   } catch (err) {
-    console.error('OAuth login failed', err);
     throw err;
   }
 };
@@ -78,21 +69,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleLoginCallback = async () => {
     try {
-      console.log('[LoginCallback] Fetching session token...');
       const response = await securityApi.fetchSessionToken();
       const accessToken = response.access_token;
       localStorage.setItem("access_token", accessToken);
-      console.log('[LoginCallback] Access token stored. Setting isLoggedIn=true.');
       setIsLoggedIn(true);
       
-      console.log('[LoginCallback] Fetching user profile...');
       const userProfile = await securityApi.getUserProfile();
       setUser(userProfile);
       localStorage.setItem('user_profile', JSON.stringify(userProfile));
-      console.log('[LoginCallback] User profile stored.', userProfile);
 
     } catch (error) {
-      console.error('[LoginCallback] Failed to complete login.', error);
     }
   };
 
@@ -114,7 +100,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const res = await securityApi.changePlan(newPlan);
       setPlanState(res.plan);
     } catch (err) {
-      console.error('Error changing plan', err);
     }
   };
 
