@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react'; // Import useState
 import { useApp } from '../context/AppContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // Import Link
 import imageUrl from '../assets/login-hero.jpg';
 
 declare global {
@@ -10,8 +10,12 @@ declare global {
 }
 
 const LoginPage: React.FC = () => {
-  const { isLoggedIn } = useApp();
+  const { isLoggedIn, login } = useApp(); // Get login from context
   const navigate = useNavigate();
+
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null); // State for login error messages
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -19,8 +23,13 @@ const LoginPage: React.FC = () => {
     }
   }, [isLoggedIn, navigate]);
 
-  const handleLogin = () => {
-    window.location.href = "https://backstagerookie-backend2.onrender.com/api/auth/google/login";
+  const handleLoginAttempt = () => {
+    setLoginError(null); // Clear previous errors
+    if (!agreedToPrivacy || !agreedToTerms) {
+      setLoginError('Please agree to both the Privacy Policy and Terms & Conditions.');
+      return;
+    }
+    login(); // Call the login function from AppContext
   };
 
   return (
@@ -60,9 +69,42 @@ const LoginPage: React.FC = () => {
                 </p>
               </div>
               
+              {/* Checkboxes for Privacy Policy and Terms & Conditions */}
+              <div className="text-left space-y-3">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="privacyPolicy"
+                    checked={agreedToPrivacy}
+                    onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                    className="form-checkbox h-4 w-4 text-red-600 rounded focus:ring-red-500"
+                  />
+                  <label htmlFor="privacyPolicy" className="ml-2 text-sm text-gray-300">
+                    I agree to the <Link to="/privacy" className="text-red-500 hover:underline">Privacy Policy</Link>
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="termsAndConditions"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="form-checkbox h-4 w-4 text-red-600 rounded focus:ring-red-500"
+                  />
+                  <label htmlFor="termsAndConditions" className="ml-2 text-sm text-gray-300">
+                    I agree to the <Link to="/terms" className="text-red-500 hover:underline">Terms & Conditions</Link>
+                  </label>
+                </div>
+              </div>
+
+              {loginError && (
+                <p className="text-red-500 text-xs mt-2">{loginError}</p>
+              )}
+
               <button
-                onClick={handleLogin}
-                className="w-full py-3 md:py-4 bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-xl font-semibold transition-all duration-200 text-sm md:text-base shadow-lg hover:shadow-red-600/50"
+                onClick={handleLoginAttempt}
+                disabled={!agreedToPrivacy || !agreedToTerms}
+                className="w-full py-3 md:py-4 bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-xl font-semibold transition-all duration-200 text-sm md:text-base shadow-lg hover:shadow-red-600/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue with Google
               </button>

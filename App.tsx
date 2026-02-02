@@ -12,6 +12,9 @@ import UploadPage from './pages/UploadPage';
 import PlanPage from './pages/PlanPage';
 import ReportsPage from './pages/ReportsPage';
 import OAuthCallbackPage from './context/OAuthCallbackPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsAndConditionsPage from './pages/TermsAndConditionsPage';
+
 const App: React.FC = () => {
   return (
     <AppProvider>
@@ -20,6 +23,8 @@ const App: React.FC = () => {
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsAndConditionsPage />} />
 
             {/* Protected Routes */}
             <Route
