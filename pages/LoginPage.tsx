@@ -10,7 +10,7 @@ declare global {
 }
 
 const LoginPage: React.FC = () => {
-  const { isLoggedIn, login } = useApp(); // Get login from context
+  const { isLoggedIn } = useApp(); // Get login from context
   const navigate = useNavigate();
 
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
@@ -29,7 +29,7 @@ const LoginPage: React.FC = () => {
       setLoginError('Please agree to both the Privacy Policy and Terms & Conditions.');
       return;
     }
-    login(); // Call the login function from AppContext
+    window.location.href = "http://localhost:5000/api/auth/google/login"; // Call the login function from AppContext
   };
 
   return (
