@@ -33,11 +33,10 @@ const PlanPage: React.FC = () => {
           {/* Basic Plan */}
           <div
             onClick={() => handleSelect('basic')}
-            className={`cursor-pointer group relative p-8 rounded-3xl border-2 transition-all h-full flex flex-col ${
-              selected === 'basic' 
-              ? 'border-red-500 bg-red-500/5 shadow-[0_0_30px_rgba(220,38,38,0.1)]' 
-              : 'border-white/10 bg-black/20 hover:border-white/20'
-            }`}
+            className={`cursor-pointer group relative p-8 rounded-3xl border-2 transition-all h-full flex flex-col ${selected === 'basic'
+                ? 'border-red-500 bg-red-500/5 shadow-[0_0_30px_rgba(220,38,38,0.1)]'
+                : 'border-white/10 bg-black/20 hover:border-white/20'
+              }`}
           >
             {selected === 'basic' && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter mono">
@@ -45,51 +44,17 @@ const PlanPage: React.FC = () => {
               </div>
             )}
             <div className="mb-6">
-              <h3 className="text-2xl font-bold uppercase tracking-tight">Basic Scan</h3>
+              <h3 className="text-2xl font-bold uppercase tracking-tight flex items-center text-gray-400">
+                Backend Scan
+                <span className="ml-2 text-[10px] bg-gray-600 text-white px-2 py-0.5 rounded italic">AI</span>
+              </h3>
+              
               <p className="text-gray-500 text-sm mt-1">Standard Vulnerability Checks</p>
             </div>
             <ul className="space-y-4 mb-8 flex-grow">
               <li className="flex items-start space-x-3 text-sm text-gray-300">
                 <span className="text-red-500 mt-1">✓</span>
-                <span>Static Analysis (SAST) for 10+ languages</span>
-              </li>
-              <li className="flex items-start space-x-3 text-sm text-gray-300">
-                <span className="text-red-500 mt-1">✓</span>
                 <span>Dependency vulnerability tracking</span>
-              </li>
-              <li className="flex items-start space-x-3 text-sm text-gray-300">
-                <span className="text-red-500 mt-1">✓</span>
-                <span>Secret detection (API keys, passwords)</span>
-              </li>
-            </ul>
-            <div className="text-xl font-bold mono">$0 <span className="text-xs text-gray-600 font-normal">/ SCAN</span></div>
-          </div>
-
-          {/* Full Plan */}
-          <div
-            onClick={() => handleSelect('full')}
-            className={`cursor-pointer group relative p-8 rounded-3xl border-2 transition-all h-full flex flex-col ${
-              selected === 'full' 
-              ? 'border-red-500 bg-red-500/5 shadow-[0_0_30px_rgba(220,38,38,0.1)]' 
-              : 'border-white/10 bg-black/20 hover:border-white/20'
-            }`}
-          >
-            {selected === 'full' && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter mono">
-                Active Protocol
-              </div>
-            )}
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold uppercase tracking-tight flex items-center">
-                Full AI Scan
-                <span className="ml-2 text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded italic">AI</span>
-              </h3>
-              <p className="text-gray-500 text-sm mt-1">Deep Compliance Analysis</p>
-            </div>
-            <ul className="space-y-4 mb-8 flex-grow">
-              <li className="flex items-start space-x-3 text-sm text-gray-300">
-                <span className="text-red-500 mt-1">✓</span>
-                <span>All Basic features included</span>
               </li>
               <li className="flex items-start space-x-3 text-sm text-gray-300">
                 <span className="text-red-500 mt-1">✓</span>
@@ -97,14 +62,44 @@ const PlanPage: React.FC = () => {
               </li>
               <li className="flex items-start space-x-3 text-sm text-gray-300">
                 <span className="text-red-500 mt-1">✓</span>
-                <span>Business compliance mapping (SOC2/ISO)</span>
+                <span>Business compliance mapping (eg-SOC2/ISO)</span>
               </li>
               <li className="flex items-start space-x-3 text-sm text-gray-300">
                 <span className="text-red-500 mt-1">✓</span>
-                <span>Architecture risk scoring</span>
+                <span>Architecture risk scoring</span> 
               </li>
             </ul>
-            <div className="text-xl font-bold mono">$99 <span className="text-xs text-gray-600 font-normal">/ SCAN</span></div>
+            <div className="text-xl font-bold mono"><s className="text-gray-500">Rs 159/-</s> <span className="text-xs text-red-500 font-normal">Free for now</span></div>
+          </div>
+
+          {/* Full Plan - Disabled with Coming Soon Vibes */}
+          <div
+            className={`relative p-8 rounded-3xl border-2 transition-all h-full flex flex-col opacity-50 cursor-not-allowed ${selected === 'full'
+                ? 'border-red-500 bg-red-500/5'
+                : 'border-white/10 bg-black/20'
+              }`}
+          >
+            {/* Optional: Overlay or Badge to make it even clearer */}
+            <div className="absolute top-4 right-4 bg-gray-700 text-white text-[10px] font-bold px-2 py-1 rounded uppercase mono">
+              Locked
+            </div>
+
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold uppercase tracking-tight flex items-center text-gray-400">
+                Hybrid Scan
+                <span className="ml-2 text-[10px] bg-gray-600 text-white px-2 py-0.5 rounded italic">AI</span>
+              </h3>
+              <p className="text-gray-600 text-sm mt-1">Deep Compliance Analysis</p>
+            </div>
+
+            <ul className="space-y-4 mb-8 flex-grow">
+              <li className="flex items-start space-x-3 text-sm text-gray-500 italic">
+                <span className="text-gray-600 mt-1">🔒</span>
+                <span>Comprehensive scanning engine under development.</span>
+              </li>
+            </ul>
+
+            <div className="text-xl font-bold mono text-gray-600">Coming Soon</div>
           </div>
         </div>
 
@@ -117,7 +112,7 @@ const PlanPage: React.FC = () => {
             {isUpdating ? 'Synchronizing...' : 'Initialize Full Analysis'}
           </button>
           <p className="text-[10px] text-gray-700 mono text-center">
-            BY PROCEEDING, YOU AGREE TO DATA PROCESSING UNDER PROTOCOL-112B.<br/>
+            BY PROCEEDING, YOU AGREE TO DATA PROCESSING UNDER PROTOCOL-112B.<br />
             ENCRYPTED COMMS ACTIVE.
           </p>
         </div>

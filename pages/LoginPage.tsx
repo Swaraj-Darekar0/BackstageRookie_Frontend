@@ -29,7 +29,7 @@ const LoginPage: React.FC = () => {
       setLoginError('Please agree to both the Privacy Policy and Terms & Conditions.');
       return;
     }
-    window.location.href = "https://backstagerookie-backend2.onrender.com/api/auth/google/login"; // Call the login function from AppContext
+    window.location.href = "https://backstagerookie-backend3.onrender.com/api/auth/google/login"; // Call the login function from AppContext
   };
 
   return (

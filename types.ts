@@ -16,12 +16,39 @@ export interface AppState {
   user: User | null;
 }
 
+export interface Finding {
+  id: string;
+  title: string;
+  severity: string;
+  severity_label: string;
+  cvss: number;
+  vector: string;
+  target: string;
+  references: string[];
+  overview: string;
+  details: string;
+  evidence: {
+    name: string;
+    description: string;
+  }[];
+  recommendation: string;
+  prompts_to_solve_the_vulnerability?: string;
+}
+
 export interface AnalyzeResponse {
   status: string;
   scan_id: string;
   plan_used: string;
   total_findings: number;
   message: string;
+  findings?: Finding[];
+  framework_analysis?: {
+      llm_enriched?: {
+        endpoints: LlmEnrichedEndpoint[];
+      };
+  };
+  ExecutiveSummary?: ExecutiveSummary;
+  Methodology?: Methodology;  
 }
 
 export interface PlanResponse {
@@ -60,6 +87,34 @@ export interface EndpointRequest {
   fields: any[];
 }
 
+export interface ExecutiveSummary {
+  overview: string;
+  vulnerability_overview_text: string;
+  vulnerability_list: {
+    id: string;
+    title: string;
+    cvss: number;
+    page: string;
+  }[];
+  severity_distribution: {
+    CRITICAL: number;
+    HIGH: number;
+    MEDIUM: number;
+    LOW: number;
+  };
+}
+
+export interface Methodology {
+  introduction: string;
+  objective: string;
+  scope_text: string;
+  systems: any[];
+  user_accounts_description: string;
+  accounts: any[];
+}
+
+
+
 export interface EndpointResponse {
   content_type: string;
   status_codes: number[];
@@ -77,27 +132,4 @@ export interface LlmEnrichedEndpoint {
   response: EndpointResponse;
   security_risks: SecurityRisk[];
   compliance_analysis: Record<string, ComplianceResult>;
-}
-// ########################################################
-
-export interface AnalyzeResponse {
-  status: string;
-  scan_id: string;
-  plan_used: string;
-  total_findings: number;
-  message: string;
-  // ### NEW: Add the optional framework_analysis property ###
-  framework_analysis?: {
-      llm_enriched?: {
-        endpoints: LlmEnrichedEndpoint[];
-      };
-    
-  };
-  // ########################################################
-}
-
-
-export interface PlanResponse {
-  status: string;
-  plan: PlanType;
 }

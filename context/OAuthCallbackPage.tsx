@@ -13,7 +13,7 @@ const OAuthCallbackPage = () => {
         
         navigate("/dashboard");
       } catch (err) {
-        
+        console.error("❌ OAuth failed:", err);
         navigate("/login");
       }
     };

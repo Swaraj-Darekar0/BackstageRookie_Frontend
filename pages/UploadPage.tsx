@@ -4,11 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGithub, faGoogle, faAws } from '@fortawesome/free-brands-svg-icons';
-
+import { securityApi } from '../services/api';
 const UploadPage: React.FC = () => {
   const navigate = useNavigate();
   const { setRepoInfo } = useApp();
-  
+  const [remainingTries, setRemainingTries] = useState<number | null>(null);
   const [url, setUrl] = useState('');
   const [sector, setSector] = useState('');
   const [framework, setFramework] = useState('django'); // Restored state
@@ -20,8 +20,18 @@ const UploadPage: React.FC = () => {
     return githubRegex.test(input);
   };
 
+  React.useEffect(() => {
+    securityApi.getScanUsage()
+      .then(data => setRemainingTries(data.remaining))
+      .catch(() => setError("Failed to fetch scan limits"));
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (remainingTries !== null && remainingTries <= 0) {
+      setError("No scan attempts remaining.");
+      return;
+    }
     setError('');
 
     if (!validateGithubUrl(url)) {
@@ -39,6 +49,9 @@ const UploadPage: React.FC = () => {
         <div className="text-center space-y-4">
           <h2 className="text-3xl md:text-5xl font-bold mono uppercase tracking-tight neon-red">Connect_Repository</h2>
           <p className="text-gray-400">Specify the target codebase and vertical sector for contextual analysis.</p>
+            <span className={`mono text-xs font-bold px-3 py-1 rounded-full border ${remainingTries === 0 ? 'border-red-500 text-red-500' : 'border-green-500 text-green-500'}`}>
+            Attempts Remaining: {remainingTries ?? '...'}
+            </span>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8 glass p-10 rounded-3xl border border-white/10 shadow-2xl">
@@ -93,9 +106,13 @@ const UploadPage: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-all uppercase tracking-widest text-sm"
-          >
-            Configure Plan &rarr;
+            disabled={remainingTries === 0}
+            className={`w-full font-bold py-4 rounded-xl transition-all uppercase tracking-widest text-sm ${
+            remainingTries === 0 
+            ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
+            : 'bg-white text-black hover:bg-gray-200'
+          }`}>
+            {remainingTries === 0 ? 'Limit Reached' : 'Configure Plan →'}
           </button>
         </form>
 

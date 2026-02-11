@@ -43,6 +43,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         } catch (error) {
           // Token might be invalid, Axios interceptor will handle 401
+          console.error('[AppProvider] Initialization error:', error);
         }
       } else {
       }
@@ -62,6 +63,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('user_profile', JSON.stringify(userProfile));
     
   } catch (err) {
+    console.error('[LoginCallback] Failed to SAVE user_profile.', err);
     throw err;
   }
 };
@@ -79,6 +81,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('user_profile', JSON.stringify(userProfile));
 
     } catch (error) {
+      console.error('[LoginCallback] Failed to complete login.', error);
     }
   };
 
