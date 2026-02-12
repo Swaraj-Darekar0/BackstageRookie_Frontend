@@ -131,36 +131,23 @@ export const securityApi = {
 
 // Inside securityApi in api.ts
 downloadReport: async (filename: string) => {
-  try {
-    // 1. Get the Signed URL from your backend first
-    const { data } = await api.get(`/api/reports/download/${filename}`);
-    const signedUrl = data.download_url;
-
-    // 2. Fetch the actual binary data from Supabase
-    // We use a clean axios call (withCredentials: false) so Supabase doesn't reject our Flask headers
-    const response = await axios.get(signedUrl, { 
-      responseType: 'blob', 
-      withCredentials: false 
-    });
-
-    // 3. Create the Blob and trigger download
-    const blob = new Blob([response.data], { type: 'application/pdf' });
-    const blobUrl = window.URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-
-    // 4. Cleanup to prevent memory leaks
-    link.remove();
-    window.URL.revokeObjectURL(blobUrl);
-    
-  } catch (err) {
-    console.error('[Download] Failed to transfer PDF:', err);
-    throw err;
-  }
+  // 1. Get the URL from your backend (Flask)
+  const { data } = await api.get(`/api/reports/download/${filename}`);
+  
+  // 2. Use the NATIVE browser fetch to avoid Axios interceptor interference
+  const response = await fetch(data.download_url);
+  const blob = await response.blob();
+  
+  // 3. Force the correct MIME type
+  const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+  const url = window.URL.createObjectURL(pdfBlob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 },
 
   generateReport: async (scanId: string, reportType: string) => {
