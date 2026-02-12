@@ -129,34 +129,38 @@ export const securityApi = {
 
 // Inside securityApi in api.ts
 
-downloadReport: async (url: string) => {
-  console.log(`[Download] Fetching report from: ${url}`);
-  
-  // Use a clean axios call without the global 'api' interceptors
-  // This prevents your Backend Bearer token from being sent to Supabase
-  const res = await axios.get(url, { 
-    responseType: 'blob',
-    // Ensure we don't send cookies or default headers to the Supabase URL
-    withCredentials: false 
-  });
+// Inside securityApi in api.ts
+downloadReport: async (filename: string) => {
+  try {
+    // 1. Get the Signed URL from your backend first
+    const { data } = await api.get(`/api/reports/download/${filename}`);
+    const signedUrl = data.download_url;
 
-  // Create a download link in the browser
-  const blobUrl = window.URL.createObjectURL(new Blob([res.data]));
-  const link = document.createElement('a');
-  link.href = blobUrl;
-  
-  // Extract filename or use a default
-  const filename = url.split('/').pop() || 'report.pdf';
-  link.setAttribute('download', filename);
-  
-  document.body.appendChild(link);
-  link.click();
-  
-  // Cleanup
-  link.remove();
-  window.URL.revokeObjectURL(blobUrl);
-  
-  return res;
+    // 2. Fetch the actual binary data from Supabase
+    // We use a clean axios call (withCredentials: false) so Supabase doesn't reject our Flask headers
+    const response = await axios.get(signedUrl, { 
+      responseType: 'blob', 
+      withCredentials: false 
+    });
+
+    // 3. Create the Blob and trigger download
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const blobUrl = window.URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+
+    // 4. Cleanup to prevent memory leaks
+    link.remove();
+    window.URL.revokeObjectURL(blobUrl);
+    
+  } catch (err) {
+    console.error('[Download] Failed to transfer PDF:', err);
+    throw err;
+  }
 },
 
   generateReport: async (scanId: string, reportType: string) => {
