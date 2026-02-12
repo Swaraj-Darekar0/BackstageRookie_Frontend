@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 const api = axios.create({
@@ -11,31 +10,33 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    
+    console.debug(`[API Request] ${config.method?.toUpperCase()} ${config.url} (Token attached)`);
+  } else {
+    console.debug(`[API Request] ${config.method?.toUpperCase()} ${config.url} (No token)`);
   }
   return config;
 });
 
-// Handle auth failure
+// Handle response & auth failure
 api.interceptors.response.use(
   res => {
-    
+    console.debug(`[API Success] ${res.status} ${res.config.url}`);
     return res;
   },
   err => {
     if (err.response) {
       console.error(
         `[API Error] ${err.response.status} ${err.response.config.url}`,
-        `\n  Response:`, err.response.data
+        `\n  Data:`, err.response.data
       );
     } else {
-      console.error('[API Error] Network or other error', err);
+      console.error('[API Error] Network or other error', err.message);
     }
+
     if (err.response?.status === 401) {
-       console.log('[Auth] Received 401, clearing local storage and redirecting to login.');
+      console.warn('[Auth] Unauthorized (401). Clearing session and redirecting.');
       localStorage.clear();
       window.location.href = '/login';
-      
     }
     
     return Promise.reject(err);
@@ -43,24 +44,31 @@ api.interceptors.response.use(
 );
 
 export const securityApi = {
-  // NEW: called after OAuth redirect
   exchangeToken: async () => {
+    console.log('[Auth] Exchanging OAuth code for tokens...');
     const res = await api.get('/api/auth/google/callback');
     return res.data;
   },
+
   getScanUsage: async () => {
     const res = await api.get("/api/scan-usage");
-    return res.data; // Expected: { remaining: 3 }
+    console.log(`[Usage] Scans remaining: ${res.data.remaining}`);
+    return res.data;
   },
+
   login: () => {
-    window.location.href = `${api.defaults.baseURL}api/auth/google/login`;
+    const loginUrl = `${api.defaults.baseURL}/api/auth/google/login`;
+    console.log('[Auth] Redirecting to Google Login...');
+    window.location.href = loginUrl;
   },
 
   logout: async () => {
+    console.log('[Auth] Logging out...');
     return api.post('/api/auth/logout');
   },
 
   changePlan: async (plan: string) => {
+    console.log(`[Billing] Changing plan to: ${plan}`);
     const res = await api.post('/api/change-plan', { plan });
     return res.data;
   },
@@ -80,94 +88,61 @@ export const securityApi = {
     return res.data;
   },
 
-  // Original analyzeRepo function (commented out)
-  /*
   analyzeRepo: async (payload: {
     github_url: string;
     sector_hint: string;
     plan: string;
     backend_framework: string;
   }) => {
-    const res = await api.post("/api/analyze", payload, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    console.log(payload)
-    console.log(res.data)
-    console.log(typeof res.data)
-    return res.data;
-  },
-  */
-
-  // New analyzeRepo function
-  analyzeRepo: async (payload: {
-    github_url: string;
-    sector_hint: string;
-    plan: string;
-    backend_framework: string;
-  }) => {
-    const res = await api.post("/api/analyze", payload, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    // Expecting res.data to be { status: 'success', message: 'Analysis started', task_id: '...' }
-    return res.data; // Return the full response which includes task_id
+    console.group('[Analysis] Starting Repository Scan');
+    console.log('Payload:', payload);
+    try {
+      const res = await api.post("/api/analyze", payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      console.log('Task ID Received:', res.data.task_id);
+      console.groupEnd();
+      return res.data;
+    } catch (err) {
+      console.groupEnd();
+      throw err;
+    }
   },
 
-
-
-  
   fetchSessionToken: async () => {
     const res = await api.get("/api/auth/google/session");
     return res.data;
   },
 
-  // NEW: Functions for polling Celery task status
+  // Polling Logs
   getScanStatus: async (taskId: string) => {
     const res = await api.get(`/api/scan/status/${taskId}`);
+    console.debug(`[Status] Scan ${taskId}: ${res.data.status}`);
     return res.data;
   },
 
   getReportStatus: async (taskId: string) => {
     const res = await api.get(`/api/report/status/${taskId}`);
+    console.debug(`[Status] Report ${taskId}: ${res.data.status}`);
     return res.data;
   },
 
   downloadReport: async (url: string) => {
-    // Axios will automatically include the token via the interceptor
-    const res = await api.get(url, {
-      responseType: 'blob' // Important: responseType must be 'blob' for binary files
-    });
+    console.log(`[Download] Fetching report from: ${url}`);
+    const res = await api.get(url, { responseType: 'blob' });
     return res;
   },
 
-  // Original generateReport function (commented out)
-  /*
-  generateReport: async (scanId: string, reportType: string, modelName: string) => {
-    const res = await api.post('/api/generate-report', { 
-      scan_id: scanId, 
-      report_type: reportType,
-      model_name: modelName // Pass the selected model name
-    });
-    return res;
-  }
-  */
-
-  // New generateReport function
   generateReport: async (scanId: string, reportType: string) => {
+    console.log(`[Report] Requesting ${reportType} for Scan ID: ${scanId}`);
     const res = await api.post('/api/generate-report', { 
       scan_id: scanId, 
       report_type: reportType,
-      model_name: 'gemini-2.5-flash' // Pass the selected model name
+      model_name: 'gemini-2.5-flash' 
     });
-
-    // Expecting res.data to be { status: 'success', message: 'Report generation started.', task_id: '...' }
-    return res.data; // Return the full response which includes task_id
+    console.log('[Report] Generation Task ID:', res.data.task_id);
+    return res.data;
   }
 };
-
 
 export default api;
