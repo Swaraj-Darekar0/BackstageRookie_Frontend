@@ -127,11 +127,37 @@ export const securityApi = {
     return res.data;
   },
 
-  downloadReport: async (url: string) => {
-    console.log(`[Download] Fetching report from: ${url}`);
-    const res = await api.get(url, { responseType: 'blob' });
-    return res;
-  },
+// Inside securityApi in api.ts
+
+downloadReport: async (url: string) => {
+  console.log(`[Download] Fetching report from: ${url}`);
+  
+  // Use a clean axios call without the global 'api' interceptors
+  // This prevents your Backend Bearer token from being sent to Supabase
+  const res = await axios.get(url, { 
+    responseType: 'blob',
+    // Ensure we don't send cookies or default headers to the Supabase URL
+    withCredentials: false 
+  });
+
+  // Create a download link in the browser
+  const blobUrl = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  
+  // Extract filename or use a default
+  const filename = url.split('/').pop() || 'report.pdf';
+  link.setAttribute('download', filename);
+  
+  document.body.appendChild(link);
+  link.click();
+  
+  // Cleanup
+  link.remove();
+  window.URL.revokeObjectURL(blobUrl);
+  
+  return res;
+},
 
   generateReport: async (scanId: string, reportType: string) => {
     console.log(`[Report] Requesting ${reportType} for Scan ID: ${scanId}`);
