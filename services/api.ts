@@ -38,7 +38,7 @@ api.interceptors.response.use(
       localStorage.clear();
       window.location.href = '/login';
     }
-    
+
     return Promise.reject(err);
   }
 );
@@ -127,35 +127,39 @@ export const securityApi = {
     return res.data;
   },
 
-// Inside securityApi in api.ts
+  downloadReport: async (url: string) => {
+    console.log(`[Download] Getting signed URL from: ${url}`);
 
-// Inside securityApi in api.ts
-downloadReport: async (filename: string) => {
-  // 1. Get the URL from your backend (Flask)
-  const { data } = await api.get(`/api/reports/download/${filename}`);
-  
-  // 2. Use the NATIVE browser fetch to avoid Axios interceptor interference
-  const response = await fetch(data.download_url);
-  const blob = await response.blob();
-  
-  // 3. Force the correct MIME type
-  const pdfBlob = new Blob([blob], { type: 'application/pdf' });
-  const url = window.URL.createObjectURL(pdfBlob);
-  
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-},
+    // Step 1: Get signed URL (normal JSON call)
+    const response = await api.get(url);
+
+    if (response.data.status !== "success") {
+      throw new Error("Failed to get signed URL");
+    }
+
+    const signedUrl = response.data.download_url;
+
+    // Step 2: Trigger actual file download
+    const fileResponse = await fetch(signedUrl);
+
+    const blob = await fileResponse.blob();
+
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = "report.pdf"; // or extract from filename
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  },
+
 
   generateReport: async (scanId: string, reportType: string) => {
     console.log(`[Report] Requesting ${reportType} for Scan ID: ${scanId}`);
-    const res = await api.post('/api/generate-report', { 
-      scan_id: scanId, 
+    const res = await api.post('/api/generate-report', {
+      scan_id: scanId,
       report_type: reportType,
-      model_name: 'gemini-2.5-flash' 
+      model_name: 'gemini-2.5-flash'
     });
     console.log('[Report] Generation Task ID:', res.data.task_id);
     return res.data;
