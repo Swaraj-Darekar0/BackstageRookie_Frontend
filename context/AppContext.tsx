@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState,useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { AppState, User, PlanType } from '../types';
 import { securityApi } from '../services/api';
 
@@ -73,37 +73,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('[LoginCallback] Failed to SAVE user_profile.', err);
       throw err;
     }
-  },[]);
+  }, []);
 
 
   // In AppContext.tsx
 
- const handleLoginCallback = useCallback(async () => {
-  try {
-    // 1. Get the token from backend session
-    const response = await securityApi.fetchSessionToken();
-    if (!response.access_token) throw new Error("No token received");
-    
-    // 2. Save to localStorage so the Interceptor can use it
-    localStorage.setItem("access_token", response.access_token);
-    
-    // 3. TRIGGER THE BACKEND SYNC (This calls your new fallback logic)
-    // This MUST happen before we set isLoggedIn to true
-    const userProfile = await securityApi.getUserProfile();
-    
-    // 4. Update state with the profile data
-    setUser(userProfile);
-    localStorage.setItem('user_profile', JSON.stringify(userProfile));
-    
-    // 5. FINALLY, set logged in status to trigger navigation
-    setIsLoggedIn(true); 
+  // In AppContext.tsx
 
-  } catch (error) {
-    console.error('[LoginCallback] Handshake failed:', error);
-    logout(); 
-    throw error;
-  }
-}, [logout]); // Include logout in dependencies since it's now a stable callback
+  const handleLoginCallback = useCallback(async () => {
+    try {
+      let accessToken: string | null = null;
+
+      // 1. BRAVE FIX: Try to get token from URL Fragment (#) first
+      // This works even if cookies were blocked during the redirect
+      const hash = window.location.hash;
+      if (hash) {
+        const params = new URLSearchParams(hash.replace('#', '?'));
+        accessToken = params.get('access_token');
+      }
+
+      // 2. Standard Fallback: If no hash, try the session route
+      // This handles cases where the user might rely on cookies (standard Chrome/Edge)
+      if (!accessToken) {
+        console.log('[Auth] No fragment token found, checking session...');
+        const response = await securityApi.fetchSessionToken();
+        accessToken = response.access_token;
+      }
+
+      if (!accessToken) throw new Error("No token received from Fragment or Session");
+
+      // 3. Save to localStorage (Critical for the Interceptor in api.ts)
+      localStorage.setItem("access_token", accessToken);
+
+      // 4. SECURITY: Scrub the URL immediately
+      // Remove the token from the address bar so it doesn't stay in browser history
+      window.history.replaceState(null, "", window.location.pathname);
+
+      // 5. Trigger Backend Sync (Using the Fallback Logic we added to main.py)
+      const userProfile = await securityApi.getUserProfile();
+
+      // 6. Update State
+      setUser(userProfile);
+      localStorage.setItem('user_profile', JSON.stringify(userProfile));
+
+      setIsLoggedIn(true);
+
+    } catch (error) {
+      console.error('[LoginCallback] Handshake failed:', error);
+      logout();
+      throw error;
+    }
+  }, [logout]);// Include logout in dependencies since it's now a stable callback
 
   const setRepoInfo = (url: string, sector: string, framework: string) => {
     setGithubUrl(url);
