@@ -29,9 +29,7 @@ const PrivacyPolicyPage: React.FC = () => {
             <p>
               Welcome to Backstage Rookie ("we", "our", "us"). We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application. Please read this policy carefully.
             </p>
-            <p className="text-xs text-gray-600">
-              LEGAL DISCLAIMER: This is a template and not legal advice. Consult with a legal professional to ensure compliance with all applicable laws.
-            </p>
+
           </section>
 
           <section className="space-y-2">
