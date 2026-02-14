@@ -52,6 +52,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     initialize();
   }, [isLoggedIn]);
 
+  const logout = useCallback(() => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user_profile');
+    setUser(null);
+    setIsLoggedIn(false);
+  }, []);
+
   const login = useCallback(async () => {
     try {
       const { access_token } = await securityApi.exchangeToken();
@@ -97,13 +104,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     throw error;
   }
 }, [logout]); // Include logout in dependencies since it's now a stable callback
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user_profile');
-    setUser(null);
-    setIsLoggedIn(false);
-  }, []);
 
   const setRepoInfo = (url: string, sector: string, framework: string) => {
     setGithubUrl(url);
