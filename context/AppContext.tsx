@@ -71,48 +71,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // In AppContext.tsx
 
-  const handleLoginCallback = useCallback( async () => {
-    try {
-      console.log('[Auth] Fetching session token from backend...');
+ const handleLoginCallback = useCallback(async () => {
+  try {
+    // 1. Get the token from backend session
+    const response = await securityApi.fetchSessionToken();
+    if (!response.access_token) throw new Error("No token received");
+    
+    // 2. Save to localStorage so the Interceptor can use it
+    localStorage.setItem("access_token", response.access_token);
+    
+    // 3. TRIGGER THE BACKEND SYNC (This calls your new fallback logic)
+    // This MUST happen before we set isLoggedIn to true
+    const userProfile = await securityApi.getUserProfile();
+    
+    // 4. Update state with the profile data
+    setUser(userProfile);
+    localStorage.setItem('user_profile', JSON.stringify(userProfile));
+    
+    // 5. FINALLY, set logged in status to trigger navigation
+    setIsLoggedIn(true); 
 
-      // 1. Get the Access Token from the backend session
-      const response = await securityApi.fetchSessionToken();
-      const accessToken = response.access_token;
-
-      if (!accessToken) {
-        throw new Error("No access token received from backend");
-      }
-
-      // 2. CRITICAL: Save to LocalStorage IMMEDIATELY
-      // This allows the api.ts interceptor to pick it up for the next request
-      localStorage.setItem("access_token", accessToken);
-
-      console.log('[Auth] Token saved. Syncing profile...');
-
-      // 3. Force a Profile Fetch (Triggers Backend DB Upsert & Fallback)
-      // We await this to ensure the backend validates us before we say "Logged In"
-      const userProfile = await securityApi.getUserProfile();
-
-      if (!userProfile || !userProfile.email) {
-        throw new Error("Failed to retrieve user profile");
-      }
-
-      // 4. Update State only after success
-      setUser(userProfile);
-      localStorage.setItem('user_profile', JSON.stringify(userProfile));
-      setIsLoggedIn(true);
-      console.log('[Auth] Login complete. User:', userProfile.email);
-
-    } catch (error) {
-      console.error('[LoginCallback] Login failed:', error);
-      // 5. Cleanup on failure so we don't get stuck
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user_profile');
-      setIsLoggedIn(false);
-      setUser(null);
-      throw error; // Re-throw so OAuthCallbackPage knows to redirect to /login
-    }
-  }, []);
+  } catch (error) {
+    console.error('[LoginCallback] Handshake failed:', error);
+    logout(); 
+    throw error;
+  }
+}, [logout]); // Include logout in dependencies since it's now a stable callback
 
   const logout = useCallback(() => {
     localStorage.removeItem('access_token');
