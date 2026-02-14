@@ -53,35 +53,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [isLoggedIn]);
 
   const login = async () => {
-  try {
-    const { access_token } = await securityApi.exchangeToken();
-    localStorage.setItem('access_token', access_token);
-    setIsLoggedIn(true);
-
-    const userProfile = await securityApi.getUserProfile();
-    setUser(userProfile);
-    localStorage.setItem('user_profile', JSON.stringify(userProfile));
-    
-  } catch (err) {
-    console.error('[LoginCallback] Failed to SAVE user_profile.', err);
-    throw err;
-  }
-};
-
-
-  const handleLoginCallback = async () => {
     try {
-      const response = await securityApi.fetchSessionToken();
-      const accessToken = response.access_token;
-      localStorage.setItem("access_token", accessToken);
+      const { access_token } = await securityApi.exchangeToken();
+      localStorage.setItem('access_token', access_token);
       setIsLoggedIn(true);
-      
+
       const userProfile = await securityApi.getUserProfile();
       setUser(userProfile);
       localStorage.setItem('user_profile', JSON.stringify(userProfile));
 
+    } catch (err) {
+      console.error('[LoginCallback] Failed to SAVE user_profile.', err);
+      throw err;
+    }
+  };
+
+
+  // In AppContext.tsx
+
+  const handleLoginCallback = async () => {
+    try {
+      console.log('[Auth] Fetching session token from backend...');
+
+      // 1. Get the Access Token from the backend session
+      const response = await securityApi.fetchSessionToken();
+      const accessToken = response.access_token;
+
+      if (!accessToken) {
+        throw new Error("No access token received from backend");
+      }
+
+      // 2. CRITICAL: Save to LocalStorage IMMEDIATELY
+      // This allows the api.ts interceptor to pick it up for the next request
+      localStorage.setItem("access_token", accessToken);
+
+      console.log('[Auth] Token saved. Syncing profile...');
+
+      // 3. Force a Profile Fetch (Triggers Backend DB Upsert & Fallback)
+      // We await this to ensure the backend validates us before we say "Logged In"
+      const userProfile = await securityApi.getUserProfile();
+
+      if (!userProfile || !userProfile.email) {
+        throw new Error("Failed to retrieve user profile");
+      }
+
+      // 4. Update State only after success
+      setUser(userProfile);
+      localStorage.setItem('user_profile', JSON.stringify(userProfile));
+      setIsLoggedIn(true);
+      console.log('[Auth] Login complete. User:', userProfile.email);
+
     } catch (error) {
-      console.error('[LoginCallback] Failed to complete login.', error);
+      console.error('[LoginCallback] Login failed:', error);
+      // 5. Cleanup on failure so we don't get stuck
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user_profile');
+      setIsLoggedIn(false);
+      setUser(null);
+      throw error; // Re-throw so OAuthCallbackPage knows to redirect to /login
     }
   };
 
