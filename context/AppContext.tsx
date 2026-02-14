@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState,useCallback, useEffect } from 'react';
 import { AppState, User, PlanType } from '../types';
 import { securityApi } from '../services/api';
 
@@ -52,7 +52,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     initialize();
   }, [isLoggedIn]);
 
-  const login = async () => {
+  const login = useCallback(async () => {
     try {
       const { access_token } = await securityApi.exchangeToken();
       localStorage.setItem('access_token', access_token);
@@ -66,12 +66,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('[LoginCallback] Failed to SAVE user_profile.', err);
       throw err;
     }
-  };
+  },[]);
 
 
   // In AppContext.tsx
 
-  const handleLoginCallback = async () => {
+  const handleLoginCallback = useCallback( async () => {
     try {
       console.log('[Auth] Fetching session token from backend...');
 
@@ -112,14 +112,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUser(null);
       throw error; // Re-throw so OAuthCallbackPage knows to redirect to /login
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_profile');
     setUser(null);
     setIsLoggedIn(false);
-  };
+  }, []);
 
   const setRepoInfo = (url: string, sector: string, framework: string) => {
     setGithubUrl(url);
